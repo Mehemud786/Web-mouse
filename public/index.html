@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wi-Fi Mouse Controller</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #111;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            touch-action: none;
+        }
+        h2 { margin-bottom: 10px; font-weight: 400; color: #aaa; }
+        #touchpad {
+            width: 90vw;
+            height: 60vh;
+            background: #1a1a1a;
+            border: 2px dashed #444;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 1.1rem;
+            color: #666;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+        }
+        .buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            width: 90vw;
+        }
+        button {
+            flex: 1;
+            padding: 16px;
+            font-size: 1rem;
+            background: #0070f3;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:active { background: #0051bb; }
+    </style>
+</head>
+<body>
+    <h2>Mobile A - Touchpad</h2>
+    <div id="touchpad">Touch and drag here to move mouse</div>
+    <div class="buttons">
+        <button onclick="sendAction('left_click')">Left Click</button>
+        <button onclick="sendAction('right_click')">Right Click</button>
+    </div>
+
+    <script>
+        const touchpad = document.getElementById('touchpad');
+        let startX = 0, startY = 0;
+
+        touchpad.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
+        });
+
+        touchpad.addEventListener('touchmove', (e) => {
+            const touch = e.touches[0];
+            let deltaX = touch.clientX - startX;
+            let deltaY = touch.clientY - startY;
+            
+            startX = touch.clientX;
+            startY = touch.clientY;
+
+            sendData(deltaX, deltaY, 'move');
+        });
+
+        function sendAction(actionType) {
+            sendData(0, 0, actionType);
+        }
+
+        function sendData(x, y, action) {
+            fetch('/api/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ x: x, y: y, action: action })
+            }).catch(err => console.error(err));
+        }
+    </script>
+</body>
+</html>
