@@ -1,30 +1,33 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from typing import Optional
 
 app = FastAPI()
 
-# Shared in-memory store for mouse state
-mouse_state = {
-    "x": 0.0,
-    "y": 0.0,
-    "action": "idle"
-}
+# Enable CORS so your mobile web app can talk to the Vercel backend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-class MouseData(BaseModel):
-    x: float
-    y: float
-    action: str
+# Temporary in-memory state (Note: For persistent production use, pair with a database like Supabase)
+latest_command = {"action": "none", "dx": 0, "dy": 0}
 
-@app.post("/api/update")
-async def update_mouse(data: MouseData):
-    global mouse_state
-    mouse_state = {
-        "x": data.x,
-        "y": data.y,
-        "action": data.action
-    }
-    return {"status": "success", "data": mouse_state}
+class MouseCommand(BaseModel):
+    action: str  # 'move', 'click', 'right-click'
+    dx: Optional[float] = 0.0
+    dy: Optional[float] = 0.0
 
-@app.get("/api/get")
-async def get_mouse():
-    return mouse_state
+@app.post("/api/mouse")
+def receive_command(cmd: MouseCommand):
+    global latest_command
+    latest_command = cmd.dict()
+    return {"status": "success", "received": latest_command}
+
+@app.get("/api/mouse")
+def get_command():
+    return latest_command
